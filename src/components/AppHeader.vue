@@ -3,9 +3,11 @@
         <template v-slot:prepend>
             <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
         </template>
+        <!-- botões superiores -->
         <template v-slot:append>
             <v-btn @click="userStore.signOut" color="red">SAIDA DE EMERGÊNCIA</v-btn>
-            <v-btn color="primary" append-icon="mdi-plus" variant="elevated" class="me-2" @click="dialog = !dialog">
+            <v-btn v-if="!!userStore.isAuthenticated" color="primary" append-icon="mdi-plus" variant="elevated"
+                class="me-2" @click="dialog = !dialog">
                 nova anotação
             </v-btn>
         </template>
@@ -26,7 +28,8 @@
         <!-- botôes de navegação -->
         <v-list density="compact" nav>
             <v-list-item prepend-icon="mdi-home-city" title="Publico" value="home" to="/"></v-list-item>
-            <v-list-item prepend-icon="mdi-account" title="Privado" value="private" to="/private"></v-list-item>
+            <v-list-item v-if="!!userStore.isAuthenticated" prepend-icon="mdi-account" title="Privado" value="private"
+                to="/private"></v-list-item>
         </v-list>
     </v-navigation-drawer>
 
@@ -39,7 +42,10 @@
                         <v-form>
                             <v-text-field v-model="nota.nota" :rules="notaRule" label="Anotação" />
                             <v-text-field v-model="nota.descricao" :rules="descriRule" label="Descrição" />
-                            <!-- <v-text-field v-model="userStore.user.uid" disabled label="user ID" /> -->
+                            <v-radio-group inline v-model="nota.privado" row>
+                                <v-radio label="Público" :value="false"></v-radio>
+                                <v-radio label="Privado" :value="true"></v-radio>
+                            </v-radio-group>
                             <v-btn :disabled="disableAdicionar" @click="addNota" block
                                 :loading="loadingDialog">Adicionar</v-btn>
                         </v-form>
@@ -68,6 +74,7 @@ const notasCollection = collection(db, 'notas');
 
 // variaveis reativas para as notas
 const nota = ref({});
+nota.value.privado = false
 
 // regras de validação
 const notaRule = [
@@ -89,6 +96,7 @@ const addNota = async () => {
         .then(() => {
         }).then(() => {
             nota.value = {}
+            nota.value.privado = false
             dialog.value = !dialog.value
             loadingDialog.value = false
         })

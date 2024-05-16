@@ -1,6 +1,7 @@
 <template>
   <v-container>
     <v-row justify="center">
+      <a>Anotações Publicas</a>
       <v-col v-for="(variant, i) in notas" :key="i" cols="10">
         <v-card class="mx-auto">
           <v-card-title>{{ variant.nota }}</v-card-title>
@@ -23,7 +24,7 @@
 import { ref, onMounted } from 'vue';
 
 // importamos o db do arquivo firebase.js
-import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, where, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import db from '@/plugins/firebase'
 const userCollection = collection(db, 'users');
 const notasCollection = collection(db, 'notas');
@@ -33,10 +34,16 @@ const notas = ref([]);
 const users = ref([]);
 //const nota = ref({});
 
+const q = query(notasCollection, where('privado', '==', false));
+
 onMounted(() => {
-  onSnapshot(notasCollection, (snapshot) => {
+  //onSnapshot(notasCollection, (snapshot) => {
+  //  notas.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  //});
+  onSnapshot(q, (snapshot) => {
     notas.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   });
+
   onSnapshot(userCollection, (snapshot) => {
     users.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   });
