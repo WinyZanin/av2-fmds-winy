@@ -5,7 +5,10 @@
         </template>
         <!-- botões superiores -->
         <template v-slot:append>
-            <v-btn @click="userStore.signOut" color="red">SAIDA DE EMERGÊNCIA</v-btn>
+            <!-- botão para caso não tenha certeza se está realmente deslogado, está aqui apenas como easter egg -->
+            <!-- <v-btn @click="userStore.signOut" color="red">SAIDA DE EMERGÊNCIA</v-btn> -->
+
+            <!-- vai exibir o botão de adicionar apenas se estiver logado -->
             <v-btn v-if="!!userStore.isAuthenticated" color="primary" append-icon="mdi-plus" variant="elevated"
                 class="me-2" @click="dialog = !dialog">
                 nova anotação
@@ -13,7 +16,9 @@
         </template>
         <v-app-bar-title>Anotações</v-app-bar-title>
     </v-app-bar>
+    <!-- gaveta de navegação fixa, mas pode ser escondida -->
     <v-navigation-drawer v-model="drawer" permanent :width="300">
+        <!-- informações de login -->
         <v-list-item v-if="userStore.isAuthenticated" :prepend-avatar="userStore.user.photoURL" lines="2"
             :title="userStore.user.displayName" :subtitle="userStore.user.email">
         </v-list-item>
@@ -23,11 +28,10 @@
                 append-icon="mdi-logout">Logout</v-btn>
             <v-btn v-else @click="userStore.signIn" color="primary" append-icon="mdi-login">Login</v-btn>
         </v-list-item>
-
         <v-divider></v-divider>
         <!-- botôes de navegação -->
         <v-list density="compact" nav>
-            <v-list-item prepend-icon="mdi-home-city" title="Publico" value="home" to="/"></v-list-item>
+            <v-list-item prepend-icon="mdi-home" title="Publico" value="home" to="/"></v-list-item>
             <v-list-item v-if="!!userStore.isAuthenticated" prepend-icon="mdi-account" title="Privado" value="private"
                 to="/private"></v-list-item>
         </v-list>
@@ -59,22 +63,23 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-const drawer = ref(true);
-const dialog = ref(false);
-const loadingDialog = ref(false);
-
 // importamos a função useUserStore do arquivo stores/user.js
 import { useUserStore } from '@/stores/user'
 const userStore = useUserStore();
 
 // importamos o db do arquivo firebase.js
-import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, } from 'firebase/firestore';
 import db from '@/plugins/firebase'
 const notasCollection = collection(db, 'notas');
 
+// variaveis reativas da navegação e dialogos
+const drawer = ref(true);           // gaveta de navegação 
+const dialog = ref(false);          // dialogo de adição
+const loadingDialog = ref(false);   // dialogo de carregamento
+
 // variaveis reativas para as notas
-const nota = ref({});
-nota.value.privado = false
+const nota = ref({});       // nota a ser editada, "unica nota", no singular
+nota.value.privado = false  // valor padrão para privado
 
 // regras de validação
 const notaRule = [
@@ -84,14 +89,15 @@ const descriRule = [
     (v) => !!v || 'Campo obrigatório',
 ]
 
+// regra para desabilitar o botão de adicionar se não estiver logado ou campos vazios
 const disableAdicionar = computed(() => {
     return !userStore.isAuthenticated || !nota.value.nota || !nota.value.descricao
 })
 
 // função assincrona para adicionar uma nota
 const addNota = async () => {
-    loadingDialog.value = true
-    nota.value.userId = userStore.user.uid
+    loadingDialog.value = true              // aciona loading do botão
+    nota.value.userId = userStore.user.uid  //pega o id do usuario logado
     await addDoc(notasCollection, { ...nota.value })
         .then(() => {
         }).then(() => {
